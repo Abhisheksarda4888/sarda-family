@@ -1019,23 +1019,29 @@
         // TODO: Replace with your Firebase config
         // Get this from Firebase Console: https://console.firebase.google.com/
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY_HERE",
-            authDomain: "your-project.firebaseapp.com",
-            databaseURL: "https://your-project.firebaseio.com",
-            projectId: "your-project-id",
-            storageBucket: "your-project.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "your-app-id"
-        };
+  apiKey: "AIzaSyDL9kBsSYCPSYNzI2uUAF6wG8TmODst1Rk",
+  authDomain: "sarda-family-tree.firebaseapp.com",
+  databaseURL: "https://sarda-family-tree-default-rtdb.firebaseio.com",
+  projectId: "sarda-family-tree",
+  storageBucket: "sarda-family-tree.firebasestorage.app",
+  messagingSenderId: "1018871120677",
+  appId: "1:1018871120677:web:9287a8d7e0d619aeab50cc"
+};
 
-        // Initialize Firebase
-        let app, database, storage;
-        let isFirebaseEnabled = false; // Set to false for local testing
+// Initialize Firebase
+let app, database, storage;
+let isFirebaseEnabled = false;
 
-        // Temporarily disable Firebase for local preview
-        console.log("⚠️ Running in LOCAL MODE - Firebase disabled");
-        console.log("💡 Data will reset on page refresh");
-        console.log("📝 Follow FIREBASE-SETUP-GUIDE.md to enable cloud storage");
+try {
+    app = firebase.initializeApp(firebaseConfig);
+    database = firebase.database();
+    storage = firebase.storage();
+    isFirebaseEnabled = true;
+    console.log("✅ Firebase initialized successfully");
+} catch (error) {
+    console.warn("⚠️ Firebase not configured. Using initial data only.");
+    isFirebaseEnabled = false;
+}
 
         // =======================
         // GLOBAL STATE
