@@ -1,0 +1,1910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sarda Family Tree - सारडा परिवार वंशावली</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Crimson+Pro:wght@300;400;600;700&family=Noto+Sans+Devanagari:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK v9 -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #8B4513;
+            --secondary-color: #D4AF37;
+            --accent-color: #DC143C;
+            --bg-cream: #FFF8E7;
+            --bg-card: #FFFBF0;
+            --text-dark: #2C1810;
+            --border-color: #D4AF37;
+            --shadow: rgba(139, 69, 19, 0.15);
+        }
+
+        body {
+            font-family: 'Crimson Pro', serif;
+            background: linear-gradient(135deg, #FFF8E7 0%, #FFE4B5 100%);
+            color: var(--text-dark);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(212, 175, 55, 0.03) 2px, rgba(212, 175, 55, 0.03) 4px),
+                repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(212, 175, 55, 0.03) 2px, rgba(212, 175, 55, 0.03) 4px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 100%;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #654321 100%);
+            color: var(--secondary-color);
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 20px var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 3px solid var(--secondary-color);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .title-section {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .title-main {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 0.25rem;
+        }
+
+        .title-sub {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            opacity: 0.9;
+            font-weight: 300;
+            letter-spacing: 1px;
+            font-family: 'Tiro Devanagari Hindi', serif;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* Search Box */
+        .search-container {
+            position: relative;
+        }
+
+        .search-box {
+            position: relative;
+            display: inline-block;
+        }
+
+        .search-box input {
+            padding: 0.6rem 2.5rem 0.6rem 1rem;
+            border: 2px solid var(--secondary-color);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text-dark);
+            font-family: inherit;
+            font-size: 0.95rem;
+            width: 250px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            background: white;
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+        }
+
+        .search-box .search-icon {
+            position: absolute;
+            right: 0.8rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            pointer-events: none;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid var(--secondary-color);
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 100;
+        }
+
+        .search-results.active {
+            display: block;
+        }
+
+        .search-result-item {
+            padding: 0.8rem;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .search-result-item:hover {
+            background: var(--bg-cream);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-name {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .search-result-path {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.2rem;
+        }
+
+        .no-results {
+            padding: 1rem;
+            text-align: center;
+            color: #666;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border: 2px solid var(--secondary-color);
+            background: transparent;
+            color: var(--secondary-color);
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: var(--secondary-color);
+            color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--secondary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #FFD700;
+            border-color: #FFD700;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #c82333;
+            border-color: #c82333;
+        }
+
+        .btn-translate {
+            background: #4285f4;
+            color: white;
+            border-color: #4285f4;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        .btn-translate:hover:not(:disabled) {
+            background: #357ae8;
+            border-color: #357ae8;
+        }
+
+        .lang-toggle {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid var(--secondary-color);
+        }
+
+        .lang-toggle button {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            color: var(--secondary-color);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .lang-toggle button.active {
+            background: var(--secondary-color);
+            color: var(--primary-color);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            animation: fadeIn 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            border: 3px solid var(--secondary-color);
+            animation: slideUp 0.3s ease;
+            margin: 2rem auto;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-content h2 {
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            text-align: center;
+            font-family: 'Tiro Devanagari Hindi', serif;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .hindi-input {
+            font-family: 'Noto Sans Devanagari', sans-serif;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .form-actions button {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .edit-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .edit-table th,
+        .edit-table td {
+            padding: 0.8rem;
+            border: 2px solid var(--border-color);
+            text-align: left;
+        }
+
+        .edit-table th {
+            background: var(--primary-color);
+            color: var(--secondary-color);
+            font-weight: 600;
+        }
+
+        .edit-table input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        .edit-table .hindi-cell input {
+            font-family: 'Noto Sans Devanagari', sans-serif;
+        }
+
+        /* Image Upload */
+        .image-upload-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .image-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid var(--secondary-color);
+            overflow: hidden;
+            background: linear-gradient(135deg, #f0e6d2 0%, #d4c5a0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--primary-color);
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .upload-btn-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-size-info {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.3rem;
+        }
+
+        /* Tree Container */
+        .tree-container {
+            padding: 3rem 2rem;
+            overflow-x: auto;
+            min-height: calc(100vh - 120px);
+        }
+
+        .tree-wrapper {
+            display: inline-block;
+            min-width: 100%;
+            padding: 2rem;
+        }
+
+        /* Tree Styles */
+        .tree {
+            display: flex;
+            justify-content: center;
+            position: relative;
+        }
+
+        .tree ul {
+            padding-top: 40px;
+            position: relative;
+            transition: all 0.5s;
+            display: flex;
+            justify-content: center;
+        }
+
+        .tree li {
+            float: left;
+            text-align: center;
+            list-style-type: none;
+            position: relative;
+            padding: 40px 15px 0 15px;
+            transition: all 0.5s;
+        }
+
+        .tree li::before, .tree li::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 50%;
+            border-top: 3px solid var(--secondary-color);
+            width: 50%;
+            height: 40px;
+        }
+
+        .tree li::after {
+            right: auto;
+            left: 50%;
+            border-left: 3px solid var(--secondary-color);
+        }
+
+        .tree li:only-child::after, .tree li:only-child::before {
+            display: none;
+        }
+
+        .tree li:only-child {
+            padding-top: 0;
+        }
+
+        .tree li:first-child::before, .tree li:last-child::after {
+            border: 0 none;
+        }
+
+        .tree li:last-child::before {
+            border-right: 3px solid var(--secondary-color);
+            border-radius: 0 8px 0 0;
+        }
+
+        .tree li:first-child::after {
+            border-radius: 8px 0 0 0;
+        }
+
+        .tree ul ul::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            border-left: 3px solid var(--secondary-color);
+            width: 0;
+            height: 40px;
+        }
+
+        .tree-node {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 16px;
+            display: inline-block;
+            border: 3px solid var(--secondary-color);
+            box-shadow: 0 8px 24px var(--shadow);
+            position: relative;
+            transition: all 0.3s ease;
+            min-width: 220px;
+            max-width: 300px;
+        }
+
+        .tree-node:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 32px rgba(139, 69, 19, 0.25);
+            border-color: var(--accent-color);
+        }
+
+        .tree-node.highlighted {
+            border-color: #ff6b00;
+            box-shadow: 0 12px 32px rgba(255, 107, 0, 0.4);
+            animation: pulse 2s ease-in-out 3;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .couple-container {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .person-card {
+            flex: 1;
+            text-align: center;
+        }
+
+        .person-photo {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 3px solid var(--secondary-color);
+            margin: 0 auto 0.8rem;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f0e6d2 0%, #d4c5a0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            color: var(--primary-color);
+        }
+
+        .person-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .person-name {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--primary-color);
+            margin-bottom: 0.3rem;
+            line-height: 1.3;
+        }
+
+        .person-name-hindi {
+            font-family: 'Noto Sans Devanagari', sans-serif;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            opacity: 0.8;
+        }
+
+        .person-details {
+            font-size: 0.8rem;
+            color: var(--text-dark);
+            opacity: 0.7;
+            margin-top: 0.3rem;
+        }
+
+        .heart-divider {
+            color: var(--accent-color);
+            font-size: 1.3rem;
+            margin-top: 25px;
+            animation: heartbeat 1.5s ease infinite;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .node-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .node-actions button {
+            padding: 0.4rem 0.9rem;
+            font-size: 0.85rem;
+            border: 2px solid var(--secondary-color);
+            background: white;
+            color: var(--primary-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .node-actions button:hover {
+            background: var(--secondary-color);
+            color: var(--primary-color);
+            transform: scale(1.05);
+        }
+
+        .status-message {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            z-index: 3000;
+            animation: slideInRight 0.3s ease;
+            max-width: 300px;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+
+        .status-message.info {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+            color: #0c5460;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 4rem 2rem;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            font-family: 'Tiro Devanagari Hindi', serif;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--secondary-color);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .title-section {
+                text-align: center;
+            }
+
+            .header-controls {
+                justify-content: center;
+            }
+
+            .search-box input {
+                width: 100%;
+            }
+
+            .tree-container {
+                padding: 1.5rem 0.5rem;
+            }
+
+            .tree li {
+                padding: 30px 8px 0 8px;
+            }
+
+            .tree-node {
+                min-width: 180px;
+                max-width: 200px;
+                padding: 1rem;
+            }
+
+            .couple-container {
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+
+            .person-photo {
+                width: 60px;
+                height: 60px;
+            }
+
+            .modal-content {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .status-message {
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+
+            .edit-table {
+                font-size: 0.85rem;
+            }
+
+            .edit-table th,
+            .edit-table td {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="title-section">
+                <div class="title-main" id="mainTitle">Sarda Family Tree</div>
+                <div class="title-sub">सारडा परिवार वंशावली</div>
+            </div>
+            <div class="header-controls">
+                <div class="search-container">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Search family member...">
+                        <span class="search-icon">🔍</span>
+                    </div>
+                    <div class="search-results" id="searchResults"></div>
+                </div>
+                <div class="lang-toggle">
+                    <button onclick="setLanguage('english')" class="active" id="langEnglish">English</button>
+                    <button onclick="setLanguage('hindi')" id="langHindi">हिन्दी</button>
+                </div>
+                <button class="btn" onclick="showLoginModal()" id="loginBtn">Admin Login</button>
+                <button class="btn" onclick="logout()" id="logoutBtn" style="display: none;">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <div class="tree-container">
+            <div id="treeContent" class="tree-wrapper">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Loading family tree...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <h2>Admin Login</h2>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Login</button>
+                    <button type="button" class="btn" onclick="closeModal('loginModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Node Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <h2 id="editModalTitle">Edit Family Member</h2>
+            <form id="editForm" onsubmit="handleSaveEdit(event)">
+                
+                <!-- HUSBAND SECTION -->
+                <h3 style="color: var(--primary-color); margin: 1.5rem 0 1rem 0; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">👨 Husband Details</h3>
+                <div class="form-group">
+                    <label>Name (English)</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="editHusbandEng" style="flex: 1;">
+                        <button type="button" class="btn-translate" onclick="translateToHindi('editHusbandEng', 'editHusbandHin')">🌐 Translate</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>नाम (हिन्दी)</label>
+                    <input type="text" id="editHusbandHin" class="hindi-input">
+                </div>
+                <div class="form-group">
+                    <label>Birth Year / जन्म वर्ष</label>
+                    <input type="text" id="editHusbandBirthYear" placeholder="वि.सं. / Year">
+                </div>
+                <div class="form-group">
+                    <label>Photo / फोटो</label>
+                    <div class="image-upload-container">
+                        <div class="image-preview" id="editHusbandPhotoPreview">👤</div>
+                        <div>
+                            <div class="upload-btn-wrapper">
+                                <button type="button" class="btn">📷 Upload Photo</button>
+                                <input type="file" id="editHusbandPhotoUpload" accept="image/*" onchange="handleImageUpload(this, 'editHusbandPhotoPreview', 'husband')">
+                            </div>
+                            <div class="file-size-info">Max size: 1MB | JPG, PNG</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WIFE SECTION -->
+                <h3 style="color: var(--primary-color); margin: 2rem 0 1rem 0; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">👩 Wife Details (Optional)</h3>
+                <div class="form-group">
+                    <label>Name (English)</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="editWifeEng" style="flex: 1;">
+                        <button type="button" class="btn-translate" onclick="translateToHindi('editWifeEng', 'editWifeHin')">🌐 Translate</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>नाम (हिन्दी)</label>
+                    <input type="text" id="editWifeHin" class="hindi-input">
+                </div>
+                <div class="form-group">
+                    <label>Birth Year / जन्म वर्ष</label>
+                    <input type="text" id="editWifeBirthYear" placeholder="वि.सं. / Year">
+                </div>
+                <div class="form-group">
+                    <label>Photo / फोटो</label>
+                    <div class="image-upload-container">
+                        <div class="image-preview" id="editWifePhotoPreview">👤</div>
+                        <div>
+                            <div class="upload-btn-wrapper">
+                                <button type="button" class="btn">📷 Upload Photo</button>
+                                <input type="file" id="editWifePhotoUpload" accept="image/*" onchange="handleImageUpload(this, 'editWifePhotoPreview', 'wife')">
+                            </div>
+                            <div class="file-size-info">Max size: 1MB | JPG, PNG</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">💾 Save</button>
+                    <button type="button" class="btn" onclick="closeModal('editModal')">❌ Cancel</button>
+                    <button type="button" class="btn btn-danger" id="deleteBtn" onclick="handleDelete()">🗑️ Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Child Modal -->
+    <div class="modal" id="addChildModal">
+        <div class="modal-content">
+            <h2>Add Child</h2>
+            <form id="addChildForm" onsubmit="handleAddChild(event)">
+                
+                <!-- CHILD SECTION -->
+                <h3 style="color: var(--primary-color); margin: 1.5rem 0 1rem 0; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">👤 Child Details</h3>
+                <div class="form-group">
+                    <label>Name (English) *</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="addChildNameEng" required style="flex: 1;">
+                        <button type="button" class="btn-translate" onclick="translateToHindi('addChildNameEng', 'addChildNameHin')">🌐 Translate</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>नाम (हिन्दी) *</label>
+                    <input type="text" id="addChildNameHin" class="hindi-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Gender / लिंग *</label>
+                    <select id="addChildGender" required>
+                        <option value="male">👨 Male / पुरुष</option>
+                        <option value="female">👩 Female / स्त्री</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Birth Year / जन्म वर्ष</label>
+                    <input type="text" id="addChildBirthYear" placeholder="वि.सं. / Year (Optional)">
+                </div>
+                <div class="form-group">
+                    <label>Photo / फोटो</label>
+                    <div class="image-upload-container">
+                        <div class="image-preview" id="addChildPhotoPreview">👤</div>
+                        <div>
+                            <div class="upload-btn-wrapper">
+                                <button type="button" class="btn">📷 Upload Photo</button>
+                                <input type="file" id="addChildPhotoUpload" accept="image/*" onchange="handleImageUpload(this, 'addChildPhotoPreview', 'child')">
+                            </div>
+                            <div class="file-size-info">Max size: 1MB | JPG, PNG</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SPOUSE SECTION -->
+                <h3 style="color: var(--primary-color); margin: 2rem 0 1rem 0; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">💑 Spouse Details (Optional)</h3>
+                <div class="form-group">
+                    <label>Spouse Name (English)</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="addChildSpouseEng" placeholder="Optional" style="flex: 1;">
+                        <button type="button" class="btn-translate" onclick="translateToHindi('addChildSpouseEng', 'addChildSpouseHin')">🌐 Translate</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>जीवनसाथी का नाम (हिन्दी)</label>
+                    <input type="text" id="addChildSpouseHin" class="hindi-input" placeholder="Optional">
+                </div>
+                <div class="form-group">
+                    <label>Spouse Birth Year / जन्म वर्ष</label>
+                    <input type="text" id="addChildSpouseBirthYear" placeholder="वि.सं. / Year (Optional)">
+                </div>
+                <div class="form-group">
+                    <label>Spouse Photo / फोटो</label>
+                    <div class="image-upload-container">
+                        <div class="image-preview" id="addChildSpousePhotoPreview">👤</div>
+                        <div>
+                            <div class="upload-btn-wrapper">
+                                <button type="button" class="btn">📷 Upload Photo</button>
+                                <input type="file" id="addChildSpousePhotoUpload" accept="image/*" onchange="handleImageUpload(this, 'addChildSpousePhotoPreview', 'spouse')">
+                            </div>
+                            <div class="file-size-info">Max size: 1MB | JPG, PNG</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">➕ Add Child</button>
+                    <button type="button" class="btn" onclick="closeModal('addChildModal')">❌ Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // =======================
+        // FIREBASE CONFIGURATION
+        // =======================
+        
+        // TODO: Replace with your Firebase config
+        // Get this from Firebase Console: https://console.firebase.google.com/
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY_HERE",
+            authDomain: "your-project.firebaseapp.com",
+            databaseURL: "https://your-project.firebaseio.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "your-app-id"
+        };
+
+        // Initialize Firebase
+        let app, database, storage;
+        let isFirebaseEnabled = false; // Set to false for local testing
+
+        // Temporarily disable Firebase for local preview
+        console.log("⚠️ Running in LOCAL MODE - Firebase disabled");
+        console.log("💡 Data will reset on page refresh");
+        console.log("📝 Follow FIREBASE-SETUP-GUIDE.md to enable cloud storage");
+
+        // =======================
+        // GLOBAL STATE
+        // =======================
+        
+        let currentLanguage = 'english';
+        let isAdmin = false;
+        let familyData = null;
+        let currentEditNode = null;
+        let currentUploadedImage = null;
+        let searchIndex = [];
+
+        // Admin Credentials
+        const ADMIN_USERS = {
+            'admin1': 'sarda@123',
+            'admin2': 'sarda@123',
+            'admin3': 'sarda@123',
+            'admin4': 'sarda@123'
+        };
+
+        // =======================
+        // INITIAL FAMILY DATA
+        // =======================
+        
+        const initialFamilyData = {
+            id: 'root',
+            husbandNameHindi: 'सुरतरामजी',
+            husbandNameEnglish: 'Suratramji',
+            husbandPhoto: '',
+            wifeNameHindi: null,
+            wifeNameEnglish: null,
+            wifePhoto: '',
+            birthYear: '',
+            generation: 1,
+            children: [
+                {
+                    id: 'node-1',
+                    husbandNameHindi: 'लक्ष्मणदासजी',
+                    husbandNameEnglish: 'Laxmandasji',
+                    husbandPhoto: '',
+                    wifeNameHindi: null,
+                    wifeNameEnglish: null,
+                    wifePhoto: '',
+                    birthYear: '',
+                    generation: 2,
+                    children: [
+                        {
+                            id: 'node-1-1',
+                            husbandNameHindi: 'रामधनजी',
+                            husbandNameEnglish: 'Ramdhaniji',
+                            husbandPhoto: '',
+                            wifeNameHindi: 'गीताबाई',
+                            wifeNameEnglish: 'Gitabai',
+                            wifePhoto: '',
+                            birthYear: '',
+                            generation: 3,
+                            children: [
+                                {
+                                    id: 'node-1-1-1',
+                                    husbandNameHindi: 'चंदनमलजी',
+                                    husbandNameEnglish: 'Chandanmalji',
+                                    husbandPhoto: '',
+                                    wifeNameHindi: 'सुप्यारीबाई',
+                                    wifeNameEnglish: 'Supyaribai',
+                                    wifePhoto: '',
+                                    birthYear: '',
+                                    generation: 4,
+                                    children: [
+                                        {
+                                            id: 'node-1-1-1-1',
+                                            husbandNameHindi: 'नथमलजी',
+                                            husbandNameEnglish: 'Nathmalji',
+                                            husbandPhoto: '',
+                                            wifeNameHindi: 'सुवाबाई',
+                                            wifeNameEnglish: 'Suwabai',
+                                            wifePhoto: '',
+                                            birthYear: '',
+                                            generation: 5,
+                                            children: [
+                                                {
+                                                    id: 'node-1-1-1-1-1',
+                                                    husbandNameHindi: 'भुरालालजी',
+                                                    husbandNameEnglish: 'Bhuralalji',
+                                                    husbandPhoto: '',
+                                                    wifeNameHindi: 'सरजूबाई',
+                                                    wifeNameEnglish: 'Sarjubai',
+                                                    wifePhoto: '',
+                                                    birthYear: '',
+                                                    generation: 6,
+                                                    children: []
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            id: 'node-1-1-1-2',
+                                            husbandNameHindi: 'शंकरलालजी',
+                                            husbandNameEnglish: 'Shankarlalji',
+                                            husbandPhoto: '',
+                                            wifeNameHindi: 'अयोध्याबाई',
+                                            wifeNameEnglish: 'Ayodhyabai',
+                                            wifePhoto: '',
+                                            birthYear: '',
+                                            generation: 5,
+                                            children: [
+                                                {
+                                                    id: 'node-1-1-1-2-1',
+                                                    husbandNameHindi: 'रामबिलासजी',
+                                                    husbandNameEnglish: 'Rambilasji',
+                                                    husbandPhoto: '',
+                                                    wifeNameHindi: 'कौशल्या',
+                                                    wifeNameEnglish: 'Kaushalya',
+                                                    wifePhoto: '',
+                                                    birthYear: '',
+                                                    generation: 6,
+                                                    children: []
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            id: 'node-1-1-1-3',
+                                            husbandNameHindi: 'कावरीबाई',
+                                            husbandNameEnglish: 'Kavribai',
+                                            husbandPhoto: '',
+                                            wifeNameHindi: 'रामदयालजी बजाज',
+                                            wifeNameEnglish: 'Ramdayalji Bajaj',
+                                            wifePhoto: '',
+                                            birthYear: '',
+                                            generation: 5,
+                                            children: []
+                                        },
+                                        {
+                                            id: 'node-1-1-1-4',
+                                            husbandNameHindi: 'रामवल्लभजी',
+                                            husbandNameEnglish: 'Ramvallabhji',
+                                            husbandPhoto: '',
+                                            wifeNameHindi: 'गट्टूबाई',
+                                            wifeNameEnglish: 'Gattubai',
+                                            wifePhoto: '',
+                                            birthYear: '',
+                                            generation: 5,
+                                            children: [
+                                                {
+                                                    id: 'node-1-1-1-4-1',
+                                                    husbandNameHindi: 'रामेश्वरलालजी',
+                                                    husbandNameEnglish: 'Rameshwarlalji',
+                                                    husbandPhoto: '',
+                                                    wifeNameHindi: 'गंगाबाई',
+                                                    wifeNameEnglish: 'Gangabai',
+                                                    wifePhoto: '',
+                                                    birthYear: 'पु.क्र. 29',
+                                                    generation: 6,
+                                                    children: [
+                                                        {
+                                                            id: 'node-1-1-1-4-1-1',
+                                                            husbandNameHindi: 'प्रेमचंदजी',
+                                                            husbandNameEnglish: 'Premchandji',
+                                                            husbandPhoto: '',
+                                                            wifeNameHindi: 'शकुंतला',
+                                                            wifeNameEnglish: 'Shakuntala',
+                                                            wifePhoto: '',
+                                                            birthYear: 'पु.क्र. 12',
+                                                            generation: 7,
+                                                            children: []
+                                                        },
+                                                        {
+                                                            id: 'node-1-1-1-4-1-2',
+                                                            husbandNameHindi: 'राधेश्यामजी',
+                                                            husbandNameEnglish: 'Radheshyamji',
+                                                            husbandPhoto: '',
+                                                            wifeNameHindi: 'संतोषदेवी',
+                                                            wifeNameEnglish: 'Santoshdevi',
+                                                            wifePhoto: '',
+                                                            birthYear: '',
+                                                            generation: 7,
+                                                            children: []
+                                                        },
+                                                        {
+                                                            id: 'node-1-1-1-4-1-3',
+                                                            husbandNameHindi: 'रामस्वरूपजी',
+                                                            husbandNameEnglish: 'Ramswaroopji',
+                                                            husbandPhoto: '',
+                                                            wifeNameHindi: 'सुमित्रादेवी',
+                                                            wifeNameEnglish: 'Sumitradevi',
+                                                            wifePhoto: '',
+                                                            birthYear: '',
+                                                            generation: 7,
+                                                            children: []
+                                                        },
+                                                        {
+                                                            id: 'node-1-1-1-4-1-4',
+                                                            husbandNameHindi: 'लक्ष्मणजी',
+                                                            husbandNameEnglish: 'Lakshmanji',
+                                                            husbandPhoto: '',
+                                                            wifeNameHindi: 'पार्वतीदेवी',
+                                                            wifeNameEnglish: 'Parvatidevi',
+                                                            wifePhoto: '',
+                                                            birthYear: '',
+                                                            generation: 7,
+                                                            children: []
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    id: 'node-1-1-2',
+                                    husbandNameHindi: 'हजारीमलजी',
+                                    husbandNameEnglish: 'Hajarimalji',
+                                    husbandPhoto: '',
+                                    wifeNameHindi: 'पारूबाई',
+                                    wifeNameEnglish: 'Paarubai',
+                                    wifePhoto: '',
+                                    birthYear: '',
+                                    generation: 4,
+                                    children: [
+                                        {
+                                            id: 'node-1-1-2-1',
+                                            husbandNameHindi: 'चुन्नीलालजी',
+                                            husbandNameEnglish: 'Chunnilalji',
+                                            husbandPhoto: '',
+                                            wifeNameHindi: 'मोहिनीदेवी',
+                                            wifeNameEnglish: 'Mohinidevi',
+                                            wifePhoto: '',
+                                            birthYear: '',
+                                            generation: 5,
+                                            children: [
+                                                {
+                                                    id: 'node-1-1-2-1-1',
+                                                    husbandNameHindi: 'शिवराजजी',
+                                                    husbandNameEnglish: 'Shivrajji',
+                                                    husbandPhoto: '',
+                                                    wifeNameHindi: 'बसंती',
+                                                    wifeNameEnglish: 'Basanti',
+                                                    wifePhoto: '',
+                                                    birthYear: '',
+                                                    generation: 6,
+                                                    children: []
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        // =======================
+        // INITIALIZE APP
+        // =======================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAdminStatus();
+            loadFamilyData();
+            setupSearch();
+        });
+
+        // =======================
+        // DATA LOADING & SAVING
+        // =======================
+        
+        function loadFamilyData() {
+            if (isFirebaseEnabled) {
+                // Load from Firebase
+                database.ref('familyTree').once('value')
+                    .then((snapshot) => {
+                        const data = snapshot.val();
+                        if (data) {
+                            familyData = data;
+                        } else {
+                            // First time - initialize with default data
+                            familyData = initialFamilyData;
+                            saveFamilyData();
+                        }
+                        renderTree();
+                        buildSearchIndex();
+                    })
+                    .catch((error) => {
+                        console.error("Error loading from Firebase:", error);
+                        familyData = initialFamilyData;
+                        renderTree();
+                        buildSearchIndex();
+                    });
+
+                // Listen for real-time updates
+                database.ref('familyTree').on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data && JSON.stringify(data) !== JSON.stringify(familyData)) {
+                        familyData = data;
+                        renderTree();
+                        buildSearchIndex();
+                        showStatus('Tree updated in real-time!', 'info');
+                    }
+                });
+            } else {
+                // Use initial data only
+                familyData = initialFamilyData;
+                renderTree();
+                buildSearchIndex();
+            }
+        }
+
+        function saveFamilyData() {
+            if (isFirebaseEnabled) {
+                database.ref('familyTree').set(familyData)
+                    .then(() => {
+                        console.log("✅ Data saved to Firebase");
+                    })
+                    .catch((error) => {
+                        console.error("❌ Error saving to Firebase:", error);
+                        showStatus('Error saving data!', 'error');
+                    });
+            } else {
+                console.warn("Firebase not enabled - changes will not be saved");
+                showStatus('Changes not saved - Firebase not configured', 'error');
+            }
+        }
+
+        // =======================
+        // ADMIN & AUTH
+        // =======================
+        
+        function checkAdminStatus() {
+            const adminStatus = sessionStorage.getItem('sardaFamilyAdmin');
+            if (adminStatus === 'true') {
+                isAdmin = true;
+                document.getElementById('loginBtn').style.display = 'none';
+                document.getElementById('logoutBtn').style.display = 'block';
+            }
+        }
+
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.add('active');
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (ADMIN_USERS[username] && ADMIN_USERS[username] === password) {
+                isAdmin = true;
+                sessionStorage.setItem('sardaFamilyAdmin', 'true');
+                document.getElementById('loginBtn').style.display = 'none';
+                document.getElementById('logoutBtn').style.display = 'block';
+                closeModal('loginModal');
+                showStatus('Login successful!', 'success');
+                renderTree();
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+            } else {
+                showStatus('Invalid username or password', 'error');
+            }
+        }
+
+        function logout() {
+            isAdmin = false;
+            sessionStorage.removeItem('sardaFamilyAdmin');
+            document.getElementById('loginBtn').style.display = 'block';
+            document.getElementById('logoutBtn').style.display = 'none';
+            showStatus('Logged out successfully', 'success');
+            renderTree();
+        }
+
+        // =======================
+        // LANGUAGE
+        // =======================
+        
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            document.getElementById('langEnglish').classList.toggle('active', lang === 'english');
+            document.getElementById('langHindi').classList.toggle('active', lang === 'hindi');
+            
+            if (lang === 'english') {
+                document.getElementById('mainTitle').textContent = 'Sarda Family Tree';
+            } else {
+                document.getElementById('mainTitle').textContent = 'सारडा परिवार वंशावली';
+            }
+            
+            renderTree();
+        }
+
+        // =======================
+        // HINDI TRANSLATION
+        // =======================
+        
+        async function translateToHindi(sourceId, targetId) {
+            const sourceText = document.getElementById(sourceId).value.trim();
+            if (!sourceText) {
+                showStatus('Please enter text to translate', 'error');
+                return;
+            }
+
+            const targetInput = document.getElementById(targetId);
+            const originalPlaceholder = targetInput.placeholder;
+            targetInput.placeholder = 'Translating...';
+            targetInput.disabled = true;
+
+            try {
+                // Using Google Translate API via MyMemory (free, no API key)
+                const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(sourceText)}&langpair=en|hi`);
+                const data = await response.json();
+                
+                if (data.responseData && data.responseData.translatedText) {
+                    targetInput.value = data.responseData.translatedText;
+                    showStatus('Translation successful!', 'success');
+                } else {
+                    showStatus('Translation failed. Please enter manually.', 'error');
+                }
+            } catch (error) {
+                console.error('Translation error:', error);
+                showStatus('Translation service unavailable', 'error');
+            } finally {
+                targetInput.placeholder = originalPlaceholder;
+                targetInput.disabled = false;
+            }
+        }
+
+        // =======================
+        // IMAGE UPLOAD
+        // =======================
+        
+        let currentUploadedHusbandImage = null;
+        let currentUploadedWifeImage = null;
+        let currentUploadedChildImage = null;
+        let currentUploadedSpouseImage = null;
+        
+        function handleImageUpload(input, previewId, imageType = 'husband') {
+            const file = input.files[0];
+            if (!file) return;
+
+            // Check file size (1MB = 1048576 bytes)
+            if (file.size > 1048576) {
+                showStatus('Image too large! Maximum size is 1MB', 'error');
+                input.value = '';
+                return;
+            }
+
+            // Check file type
+            if (!file.type.startsWith('image/')) {
+                showStatus('Please upload an image file', 'error');
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // Resize image if needed
+                    const canvas = document.createElement('canvas');
+                    const maxSize = 400; // Max dimension
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > maxSize) {
+                            height *= maxSize / width;
+                            width = maxSize;
+                        }
+                    } else {
+                        if (height > maxSize) {
+                            width *= maxSize / height;
+                            height = maxSize;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Convert to base64
+                    const base64 = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    // Store based on type
+                    if (imageType === 'husband') {
+                        currentUploadedHusbandImage = base64;
+                    } else if (imageType === 'wife') {
+                        currentUploadedWifeImage = base64;
+                    } else if (imageType === 'child') {
+                        currentUploadedChildImage = base64;
+                    } else if (imageType === 'spouse') {
+                        currentUploadedSpouseImage = base64;
+                    }
+
+                    // Show preview
+                    const preview = document.getElementById(previewId);
+                    preview.innerHTML = `<img src="${base64}" alt="Preview">`;
+                    
+                    showStatus('Image uploaded successfully!', 'success');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // =======================
+        // SEARCH
+        // =======================
+        
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const searchResults = document.getElementById('searchResults');
+
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim().toLowerCase();
+                
+                if (query.length < 2) {
+                    searchResults.classList.remove('active');
+                    return;
+                }
+
+                const results = searchIndex.filter(item => 
+                    item.nameEnglish.toLowerCase().includes(query) ||
+                    item.nameHindi.includes(query) ||
+                    (item.spouseEnglish && item.spouseEnglish.toLowerCase().includes(query)) ||
+                    (item.spouseHindi && item.spouseHindi.includes(query))
+                );
+
+                displaySearchResults(results);
+            });
+
+            // Close search results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                    searchResults.classList.remove('active');
+                }
+            });
+        }
+
+        function buildSearchIndex() {
+            searchIndex = [];
+            
+            function indexNode(node, path = []) {
+                const personPath = [...path, currentLanguage === 'hindi' ? node.husbandNameHindi : node.husbandNameEnglish];
+                
+                searchIndex.push({
+                    id: node.id,
+                    nameEnglish: node.husbandNameEnglish,
+                    nameHindi: node.husbandNameHindi,
+                    spouseEnglish: node.wifeNameEnglish,
+                    spouseHindi: node.wifeNameHindi,
+                    path: personPath.join(' → ')
+                });
+
+                if (node.children && node.children.length > 0) {
+                    node.children.forEach(child => indexNode(child, personPath));
+                }
+            }
+
+            indexNode(familyData);
+        }
+
+        function displaySearchResults(results) {
+            const searchResults = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                searchResults.innerHTML = '<div class="no-results">No matches found</div>';
+                searchResults.classList.add('active');
+                return;
+            }
+
+            searchResults.innerHTML = results.map(result => `
+                <div class="search-result-item" onclick="highlightNode('${result.id}')">
+                    <div class="search-result-name">
+                        ${currentLanguage === 'hindi' ? result.nameHindi : result.nameEnglish}
+                        ${result.spouseEnglish ? ` ❤️ ${currentLanguage === 'hindi' ? result.spouseHindi : result.spouseEnglish}` : ''}
+                    </div>
+                    <div class="search-result-path">${result.path}</div>
+                </div>
+            `).join('');
+            
+            searchResults.classList.add('active');
+        }
+
+        function highlightNode(nodeId) {
+            // Close search results
+            document.getElementById('searchResults').classList.remove('active');
+            document.getElementById('searchInput').value = '';
+
+            // Find and highlight the node
+            const nodeElement = document.querySelector(`[data-node-id="${nodeId}"]`);
+            if (nodeElement) {
+                nodeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                nodeElement.classList.add('highlighted');
+                setTimeout(() => {
+                    nodeElement.classList.remove('highlighted');
+                }, 6000);
+            }
+        }
+
+        // =======================
+        // TREE RENDERING
+        // =======================
+        
+        function renderTree() {
+            const container = document.getElementById('treeContent');
+            container.innerHTML = '';
+
+            const tree = document.createElement('div');
+            tree.className = 'tree';
+            
+            const rootUl = document.createElement('ul');
+            renderNode(familyData, rootUl);
+            tree.appendChild(rootUl);
+            
+            container.appendChild(tree);
+        }
+
+        function renderNode(node, parentElement) {
+            const li = document.createElement('li');
+            
+            const nodeDiv = document.createElement('div');
+            nodeDiv.className = 'tree-node';
+            nodeDiv.setAttribute('data-node-id', node.id);
+            
+            const coupleDiv = document.createElement('div');
+            coupleDiv.className = 'couple-container';
+            
+            // Main person
+            const personDiv = document.createElement('div');
+            personDiv.className = 'person-card';
+            const personName = currentLanguage === 'hindi' ? node.husbandNameHindi : node.husbandNameEnglish;
+            const personNameSecondary = currentLanguage === 'hindi' ? node.husbandNameEnglish : node.husbandNameHindi;
+            personDiv.innerHTML = `
+                <div class="person-photo">
+                    ${node.husbandPhoto ? `<img src="${node.husbandPhoto}" alt="${personName}">` : '👤'}
+                </div>
+                <div class="person-name">${personName}</div>
+                ${personNameSecondary ? `<div class="person-name-hindi">${personNameSecondary}</div>` : ''}
+                ${node.birthYear ? `<div class="person-details">${node.birthYear}</div>` : ''}
+            `;
+            coupleDiv.appendChild(personDiv);
+            
+            // Spouse if exists
+            if (node.wifeNameHindi || node.wifeNameEnglish) {
+                const heart = document.createElement('div');
+                heart.className = 'heart-divider';
+                heart.textContent = '❤️';
+                coupleDiv.appendChild(heart);
+                
+                const spouseDiv = document.createElement('div');
+                spouseDiv.className = 'person-card';
+                const spouseName = currentLanguage === 'hindi' ? node.wifeNameHindi : node.wifeNameEnglish;
+                const spouseNameSecondary = currentLanguage === 'hindi' ? node.wifeNameEnglish : node.wifeNameHindi;
+                spouseDiv.innerHTML = `
+                    <div class="person-photo">
+                        ${node.wifePhoto ? `<img src="${node.wifePhoto}" alt="${spouseName}">` : '👤'}
+                    </div>
+                    <div class="person-name">${spouseName ? `(${spouseName})` : ''}</div>
+                    ${spouseNameSecondary ? `<div class="person-name-hindi">(${spouseNameSecondary})</div>` : ''}
+                `;
+                coupleDiv.appendChild(spouseDiv);
+            }
+            
+            nodeDiv.appendChild(coupleDiv);
+            
+            // Admin actions
+            if (isAdmin) {
+                const actions = document.createElement('div');
+                actions.className = 'node-actions';
+                
+                const addChildBtn = document.createElement('button');
+                addChildBtn.textContent = 'Add Child';
+                addChildBtn.onclick = () => showAddChildModal(node);
+                actions.appendChild(addChildBtn);
+                
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Edit';
+                editBtn.onclick = () => showEditModal(node);
+                actions.appendChild(editBtn);
+                
+                nodeDiv.appendChild(actions);
+            }
+            
+            li.appendChild(nodeDiv);
+            
+            // Children
+            if (node.children && node.children.length > 0) {
+                const childUl = document.createElement('ul');
+                node.children.forEach(child => renderNode(child, childUl));
+                li.appendChild(childUl);
+            }
+            
+            parentElement.appendChild(li);
+        }
+
+        // =======================
+        // MODALS
+        // =======================
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            currentUploadedHusbandImage = null;
+            currentUploadedWifeImage = null;
+            currentUploadedChildImage = null;
+            currentUploadedSpouseImage = null;
+        }
+
+        function showEditModal(node) {
+            currentEditNode = node;
+            
+            // Husband details
+            document.getElementById('editHusbandEng').value = node.husbandNameEnglish || '';
+            document.getElementById('editHusbandHin').value = node.husbandNameHindi || '';
+            document.getElementById('editHusbandBirthYear').value = node.birthYear || '';
+            
+            const husbandPreview = document.getElementById('editHusbandPhotoPreview');
+            if (node.husbandPhoto) {
+                husbandPreview.innerHTML = `<img src="${node.husbandPhoto}" alt="Photo">`;
+            } else {
+                husbandPreview.innerHTML = '👤';
+            }
+            
+            // Wife details
+            document.getElementById('editWifeEng').value = node.wifeNameEnglish || '';
+            document.getElementById('editWifeHin').value = node.wifeNameHindi || '';
+            document.getElementById('editWifeBirthYear').value = node.wifeBirthYear || '';
+            
+            const wifePreview = document.getElementById('editWifePhotoPreview');
+            if (node.wifePhoto) {
+                wifePreview.innerHTML = `<img src="${node.wifePhoto}" alt="Photo">`;
+            } else {
+                wifePreview.innerHTML = '👤';
+            }
+            
+            // Reset uploads
+            currentUploadedHusbandImage = null;
+            currentUploadedWifeImage = null;
+            document.getElementById('editHusbandPhotoUpload').value = '';
+            document.getElementById('editWifePhotoUpload').value = '';
+            
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function handleSaveEdit(e) {
+            e.preventDefault();
+            
+            // Save husband details
+            currentEditNode.husbandNameEnglish = document.getElementById('editHusbandEng').value;
+            currentEditNode.husbandNameHindi = document.getElementById('editHusbandHin').value;
+            currentEditNode.birthYear = document.getElementById('editHusbandBirthYear').value;
+            
+            if (currentUploadedHusbandImage) {
+                currentEditNode.husbandPhoto = currentUploadedHusbandImage;
+            }
+            
+            // Save wife details
+            currentEditNode.wifeNameEnglish = document.getElementById('editWifeEng').value || null;
+            currentEditNode.wifeNameHindi = document.getElementById('editWifeHin').value || null;
+            currentEditNode.wifeBirthYear = document.getElementById('editWifeBirthYear').value || '';
+            
+            if (currentUploadedWifeImage) {
+                currentEditNode.wifePhoto = currentUploadedWifeImage;
+            }
+            
+            saveFamilyData();
+            closeModal('editModal');
+            showStatus('Saved successfully!', 'success');
+            renderTree();
+            buildSearchIndex();
+        }
+
+        function showAddChildModal(parentNode) {
+            currentEditNode = parentNode;
+            
+            document.getElementById('addChildNameEng').value = '';
+            document.getElementById('addChildNameHin').value = '';
+            document.getElementById('addChildGender').value = 'male';
+            document.getElementById('addChildBirthYear').value = '';
+            document.getElementById('addChildPhotoPreview').innerHTML = '👤';
+            document.getElementById('addChildPhotoUpload').value = '';
+            
+            document.getElementById('addChildSpouseEng').value = '';
+            document.getElementById('addChildSpouseHin').value = '';
+            document.getElementById('addChildSpouseBirthYear').value = '';
+            document.getElementById('addChildSpousePhotoPreview').innerHTML = '👤';
+            document.getElementById('addChildSpousePhotoUpload').value = '';
+            
+            currentUploadedChildImage = null;
+            currentUploadedSpouseImage = null;
+            
+            document.getElementById('addChildModal').classList.add('active');
+        }
+
+        function handleAddChild(e) {
+            e.preventDefault();
+            
+            const newChild = {
+                id: 'node-' + Date.now(),
+                husbandNameEnglish: document.getElementById('addChildNameEng').value,
+                husbandNameHindi: document.getElementById('addChildNameHin').value,
+                husbandPhoto: currentUploadedChildImage || '',
+                birthYear: document.getElementById('addChildBirthYear').value,
+                wifeNameEnglish: document.getElementById('addChildSpouseEng').value || null,
+                wifeNameHindi: document.getElementById('addChildSpouseHin').value || null,
+                wifePhoto: currentUploadedSpouseImage || '',
+                wifeBirthYear: document.getElementById('addChildSpouseBirthYear').value || '',
+                generation: currentEditNode.generation + 1,
+                children: []
+            };
+            
+            if (!currentEditNode.children) {
+                currentEditNode.children = [];
+            }
+            currentEditNode.children.push(newChild);
+            
+            saveFamilyData();
+            closeModal('addChildModal');
+            showStatus('Child added successfully!', 'success');
+            renderTree();
+            buildSearchIndex();
+        }
+
+        function handleDelete() {
+            if (!confirm('Are you sure you want to delete this member? This action cannot be undone.')) {
+                return;
+            }
+            
+            function removeNode(node, target) {
+                if (!node.children) return false;
+                
+                const index = node.children.findIndex(child => child.id === target.id);
+                if (index !== -1) {
+                    node.children.splice(index, 1);
+                    return true;
+                }
+                
+                for (let child of node.children) {
+                    if (removeNode(child, target)) return true;
+                }
+                
+                return false;
+            }
+            
+            if (currentEditNode.id === 'root') {
+                showStatus('Cannot delete root member!', 'error');
+                return;
+            }
+            
+            if (removeNode(familyData, currentEditNode)) {
+                saveFamilyData();
+                closeModal('editModal');
+                showStatus('Deleted successfully!', 'success');
+                renderTree();
+                buildSearchIndex();
+            }
+        }
+
+        // =======================
+        // UTILITY
+        // =======================
+        
+        function showStatus(message, type) {
+            const existing = document.querySelector('.status-message');
+            if (existing) existing.remove();
+
+            const div = document.createElement('div');
+            div.className = `status-message ${type}`;
+            div.textContent = message;
+            document.body.appendChild(div);
+
+            setTimeout(() => div.remove(), 4000);
+        }
+    </script>
+</body>
+</html>
